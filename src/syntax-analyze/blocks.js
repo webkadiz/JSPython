@@ -20,7 +20,7 @@ function state(func, tokenizer) {
   }
 }
 
-function doubleCall(func) {
+function db(func) {
   return (state) => {
     return func()(state)
   }
@@ -129,8 +129,7 @@ function nt(...tokenTypes) {
 module.exports = {
   main,
   state,
-  doubleCall,
-  debug,
+  db,
   push,
   pop,
   loop,
@@ -138,4 +137,5 @@ module.exports = {
   block,
   astNode,
   nt,
+  debug,
 }

@@ -3,8 +3,7 @@
 const astNodeTypes = require("../ast/ast-node-types")
 const tokenTypes = require("../token-analyze/token-types")
 const {
-  doubleCall,
-  debug,
+  db,
   push,
   pop,
   loop,
@@ -12,6 +11,7 @@ const {
   block,
   astNode,
   nt,
+  debug,
 } = require("./blocks")
 
 function mExpr() {
@@ -43,12 +43,12 @@ function uExpr() {
   return alts(
     block(
       nt(tokenTypes.PLUS),
-      push(doubleCall(uExpr)),
+      push(db(uExpr)),
       astNode(astNodeTypes.U_ADD, pop())
     ),
     block(
       nt(tokenTypes.MINUS),
-      push(doubleCall(uExpr)),
+      push(db(uExpr)),
       astNode(astNodeTypes.U_SUB, pop())
     ),
     power()
@@ -60,7 +60,7 @@ function power() {
     block(
       debug(push(primary())),
       nt(tokenTypes.D_STAR),
-      push(doubleCall(uExpr)),
+      push(db(uExpr)),
       astNode(astNodeTypes.POWER, pop(-1), pop())
     ),
     primary()
@@ -85,7 +85,7 @@ function atom() {
     identifier(),
     block(
       nt(tokenTypes.OR_BRACKET),
-      push(doubleCall(uExpr)),
+      push(db(uExpr)),
       nt(tokenTypes.CR_BRACKET),
       pop()
     ),
