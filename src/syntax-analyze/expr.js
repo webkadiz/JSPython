@@ -59,16 +59,8 @@ function mExprGen(tokenOperator, astNodeType) {
 
 function uExpr() {
   return alts(
-    block(
-      nt(tokenTypes.PLUS),
-      push(db(uExpr)),
-      astNode(astNodeTypes.U_ADD, pop())
-    ),
-    block(
-      nt(tokenTypes.MINUS),
-      push(db(uExpr)),
-      astNode(astNodeTypes.U_SUB, pop())
-    ),
+    block(nt(tokenTypes.PLUS), astNode(astNodeTypes.U_ADD, db(uExpr))),
+    block(nt(tokenTypes.MINUS), astNode(astNodeTypes.U_SUB, db(uExpr))),
     power()
   )
 }
@@ -76,10 +68,9 @@ function uExpr() {
 function power() {
   return alts(
     block(
-      debug(push(primary())),
+      push(primary()),
       nt(tokenTypes.D_STAR),
-      push(db(uExpr)),
-      astNode(astNodeTypes.POWER, pop(-1), pop())
+      astNode(astNodeTypes.POWER, pop(), db(uExpr))
     ),
     primary()
   )

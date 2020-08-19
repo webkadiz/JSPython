@@ -9,6 +9,13 @@ module.exports = class SyntaxAnalyzer {
   }
 
   parse() {
+    global.state  = {
+      stack: [],
+      error: null,
+      cursorMax: -1,
+      tokenizer: this.tokenizer,
+    }
+
     const [programmNode, state] = main(expr(), this.tokenizer)
 
     if (programmNode) return programmNode
