@@ -14,6 +14,27 @@ const {
   debug,
 } = require("./blocks")
 
+function aExpr() {
+  debugger
+  return alts(
+    block(
+      push(mExpr()),
+      loop(
+        alts(
+          aExprGen(tokenTypes.PLUS, astNodeTypes.ADD),
+          aExprGen(tokenTypes.MINUS, astNodeTypes.SUB)
+        )
+      ),
+      pop()
+    ),
+    mExpr()
+  )
+}
+
+function aExprGen(tokenOperator, astNodeType) {
+  return block(nt(tokenOperator), push(astNode(astNodeType, pop(), mExpr())))
+}
+
 function mExpr() {
   return alts(
     block(
@@ -25,18 +46,15 @@ function mExpr() {
           mExprGen(tokenTypes.D_SLASH, astNodeTypes.DIVINT),
           mExprGen(tokenTypes.PERCENT, astNodeTypes.REMAINDER)
         )
-      )
+      ),
+      pop()
     ),
     uExpr()
   )
 }
 
 function mExprGen(tokenOperator, astNodeType) {
-  return block(
-    nt(tokenOperator),
-    push(uExpr()),
-    push(astNode(astNodeType, pop(-1), pop()))
-  )
+  return block(nt(tokenOperator), push(astNode(astNodeType, pop(), uExpr())))
 }
 
 function uExpr() {
@@ -104,4 +122,4 @@ function identifier() {
   return block(astNode(astNodeTypes.IDENT, nt(tokenTypes.IDENT)))
 }
 
-module.exports = mExpr
+module.exports = aExpr
