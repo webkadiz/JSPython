@@ -14,18 +14,58 @@ const {
   debug,
 } = require("./blocks")
 
+function comparison() {
+  return alts(
+    block(
+      push(orExpr()),
+      loop(
+        alts(
+          exprLoopTemplate(tokenTypes.LESS, astNodeTypes.COMP_LESS, orExpr()),
+          exprLoopTemplate(tokenTypes.MORE, astNodeTypes.COMP_MORE, orExpr()),
+          exprLoopTemplate(
+            tokenTypes.D_EQUALS,
+            astNodeTypes.COMP_EQUALS,
+            orExpr()
+          ),
+          exprLoopTemplate(
+            tokenTypes.LESS_EQUALS,
+            astNodeTypes.COMP_LESS_EQUALS,
+            orExpr()
+          ),
+          exprLoopTemplate(
+            tokenTypes.MORE_EQUALS,
+            astNodeTypes.COMP_MORE_EQUALS,
+            orExpr()
+          ),
+          exprLoopTemplate(
+            tokenTypes.NOT_EQUALS,
+            astNodeTypes.COMP_NOT_EQUALS,
+            orExpr()
+          ),
+          block(
+            nt(tokenTypes.NOT),
+            exprLoopTemplate(tokenTypes.IN, astNodeTypes.COMP_NOT_IN, orExpr())
+          ),
+          exprLoopTemplate(tokenTypes.IN, astNodeTypes.COMP_IN, orExpr()),
+          block(
+            nt(tokenTypes.IS),
+            exprLoopTemplate(tokenTypes.NOT, astNodeTypes.COMP_IS_NOT, orExpr())
+          ),
+          exprLoopTemplate(tokenTypes.IS, astNodeTypes.COMP_IS, orExpr())
+        )
+      ),
+      pop()
+    ),
+    orExpr()
+  )
+}
+
 function orExpr() {
   return alts(
     block(
       push(xorExpr()),
       loop(
-        alts(
-          exprLoopTemplate(
-            tokenTypes.PIPE,
-            astNodeTypes.BIN_OR,
-            xorExpr()
-          )
-        )
+        alts(exprLoopTemplate(tokenTypes.PIPE, astNodeTypes.BIN_OR, xorExpr()))
       ),
       pop()
     ),
@@ -39,11 +79,7 @@ function xorExpr() {
       push(andExpr()),
       loop(
         alts(
-          exprLoopTemplate(
-            tokenTypes.CARET,
-            astNodeTypes.BIN_XOR,
-            andExpr()
-          )
+          exprLoopTemplate(tokenTypes.CARET, astNodeTypes.BIN_XOR, andExpr())
         )
       ),
       pop()
@@ -181,4 +217,4 @@ function exprLoopTemplate(tokenOperator, astNodeType, subExpr) {
   return block(nt(tokenOperator), push(astNode(astNodeType, pop(), subExpr)))
 }
 
-module.exports = orExpr
+module.exports = comparison
