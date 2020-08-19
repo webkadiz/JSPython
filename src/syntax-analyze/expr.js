@@ -14,6 +14,63 @@ const {
   debug,
 } = require("./blocks")
 
+function orExpr() {
+  return alts(
+    block(
+      push(xorExpr()),
+      loop(
+        alts(
+          exprLoopTemplate(
+            tokenTypes.PIPE,
+            astNodeTypes.BIN_OR,
+            xorExpr()
+          )
+        )
+      ),
+      pop()
+    ),
+    xorExpr()
+  )
+}
+
+function xorExpr() {
+  return alts(
+    block(
+      push(andExpr()),
+      loop(
+        alts(
+          exprLoopTemplate(
+            tokenTypes.CARET,
+            astNodeTypes.BIN_XOR,
+            andExpr()
+          )
+        )
+      ),
+      pop()
+    ),
+    andExpr()
+  )
+}
+
+function andExpr() {
+  return alts(
+    block(
+      push(shiftExpr()),
+      loop(
+        alts(
+          exprLoopTemplate(
+            tokenTypes.AMPERSAND,
+            astNodeTypes.BIN_AND,
+            shiftExpr()
+          )
+        )
+      ),
+      pop()
+    ),
+    shiftExpr()
+  )
+}
+
 function shiftExpr() {
   return alts(
     block(
@@ -124,4 +181,4 @@ function exprLoopTemplate(tokenOperator, astNodeType, subExpr) {
   return block(nt(tokenOperator), push(astNode(astNodeType, pop(), subExpr)))
 }
 
-module.exports = shiftExpr
+module.exports = orExpr
