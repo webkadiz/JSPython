@@ -14,15 +14,30 @@ const {
   debug,
 } = require("./blocks")
 
+function shiftExpr() {
+  return alts(
+    block(
+      push(aExpr()),
+      loop(
+        alts(
+          exprLoopTemplate(tokenTypes.D_LESS, astNodeTypes.SHL, aExpr()),
+          exprLoopTemplate(tokenTypes.D_MORE, astNodeTypes.SHR, aExpr())
+        )
+      ),
+      pop()
+    ),
+    aExpr()
+  )
+}
+
 function aExpr() {
-  debugger
   return alts(
     block(
       push(mExpr()),
       loop(
         alts(
-          aExprGen(tokenTypes.PLUS, astNodeTypes.ADD),
-          aExprGen(tokenTypes.MINUS, astNodeTypes.SUB)
+          exprLoopTemplate(tokenTypes.PLUS, astNodeTypes.ADD, mExpr()),
+          exprLoopTemplate(tokenTypes.MINUS, astNodeTypes.SUB, mExpr())
         )
       ),
       pop()
@@ -31,30 +46,22 @@ function aExpr() {
   )
 }
 
-function aExprGen(tokenOperator, astNodeType) {
-  return block(nt(tokenOperator), push(astNode(astNodeType, pop(), mExpr())))
-}
-
 function mExpr() {
   return alts(
     block(
       push(uExpr()),
       loop(
         alts(
-          mExprGen(tokenTypes.STAR, astNodeTypes.MUL),
-          mExprGen(tokenTypes.SLASH, astNodeTypes.DIV),
-          mExprGen(tokenTypes.D_SLASH, astNodeTypes.DIVINT),
-          mExprGen(tokenTypes.PERCENT, astNodeTypes.REMAINDER)
+          exprLoopTemplate(tokenTypes.STAR, astNodeTypes.MUL, uExpr()),
+          exprLoopTemplate(tokenTypes.SLASH, astNodeTypes.DIV, uExpr()),
+          exprLoopTemplate(tokenTypes.D_SLASH, astNodeTypes.DIVINT, uExpr()),
+          exprLoopTemplate(tokenTypes.PERCENT, astNodeTypes.REMAINDER, uExpr())
         )
       ),
       pop()
     ),
     uExpr()
   )
-}
-
-function mExprGen(tokenOperator, astNodeType) {
-  return block(nt(tokenOperator), push(astNode(astNodeType, pop(), uExpr())))
 }
 
 function uExpr() {
@@ -113,4 +120,8 @@ function identifier() {
   return block(astNode(astNodeTypes.IDENT, nt(tokenTypes.IDENT)))
 }
 
-module.exports = aExpr
+function exprLoopTemplate(tokenOperator, astNodeType, subExpr) {
+  return block(nt(tokenOperator), push(astNode(astNodeType, pop(), subExpr)))
+}
+
+module.exports = shiftExpr
