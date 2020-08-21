@@ -15,7 +15,6 @@ function state(func, tokenizer) {
       tokenizer: tokenizer,
     }
 
-    debugger
     return [func(state), state]
   }
 }
@@ -82,6 +81,21 @@ function alts(...alts) {
 
 function block(...elems) {
   return (state) => {
+    let res
+
+    for (const el of elems) {
+      res = el(state)
+      if (res === false) {
+        return res
+      }
+    }
+
+    return res
+  }
+}
+
+function blockStateSave(...elems) {
+  return (state) => {
     const savedStack = state.stack.slice()
     const savedTokenizerState = state.tokenizer.getState()
     let res
@@ -135,6 +149,7 @@ module.exports = {
   loop,
   alts,
   block,
+  blockStateSave,
   astNode,
   nt,
   debug,

@@ -28,7 +28,9 @@ function interpret(code, fileName) {
     new Tokenizer(code, fileName).prepare()
   )
 
+  console.time()
   const programmNode = syntaxAnalyzer.parse()
+  console.timeEnd()
 
   programmNode.print()
 }

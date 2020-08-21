@@ -9,10 +9,22 @@ const {
   loop,
   alts,
   block,
+  blockStateSave,
   astNode,
   nt,
-  debug,
 } = require("./blocks")
+
+global.call = call
+global.power = power
+global.primary = primary
+
+function notTest() {
+  debugger
+  return alts(
+    block(nt(tokenTypes.NOT), astNode(astNodeTypes.BOOL_NOT, db(notTest))),
+    comparison()
+  )
+}
 
 function comparison() {
   return alts(
@@ -56,7 +68,7 @@ function comparison() {
       ),
       pop()
     ),
-    orExpr()
+    pop()
   )
 }
 
@@ -69,7 +81,7 @@ function orExpr() {
       ),
       pop()
     ),
-    xorExpr()
+    pop()
   )
 }
 
@@ -84,7 +96,7 @@ function xorExpr() {
       ),
       pop()
     ),
-    andExpr()
+    pop()
   )
 }
 
@@ -103,7 +115,7 @@ function andExpr() {
       ),
       pop()
     ),
-    shiftExpr()
+    pop()
   )
 }
 
@@ -119,7 +131,7 @@ function shiftExpr() {
       ),
       pop()
     ),
-    aExpr()
+    pop()
   )
 }
 
@@ -135,7 +147,7 @@ function aExpr() {
       ),
       pop()
     ),
-    mExpr()
+    pop()
   )
 }
 
@@ -153,11 +165,12 @@ function mExpr() {
       ),
       pop()
     ),
-    uExpr()
+    pop()
   )
 }
 
 function uExpr() {
+  debugger
   return alts(
     block(nt(tokenTypes.PLUS), astNode(astNodeTypes.U_ADD, db(uExpr))),
     block(nt(tokenTypes.MINUS), astNode(astNodeTypes.U_SUB, db(uExpr))),
@@ -166,22 +179,25 @@ function uExpr() {
 }
 
 function power() {
+  debugger
   return alts(
     block(
       push(primary()),
       nt(tokenTypes.D_STAR),
       astNode(astNodeTypes.POWER, pop(), db(uExpr))
     ),
-    primary()
+    pop()
   )
 }
 
 function primary() {
+  debugger
   return alts(call(), atom())
 }
 
 function call() {
-  return block(
+  debugger
+  return blockStateSave(
     push(atom()),
     nt(tokenTypes.OR_BRACKET),
     nt(tokenTypes.CR_BRACKET),
@@ -190,11 +206,12 @@ function call() {
 }
 
 function atom() {
+  debugger
   return alts(
     identifier(),
     block(
       nt(tokenTypes.OR_BRACKET),
-      push(db(uExpr)),
+      push(db(notTest)),
       nt(tokenTypes.CR_BRACKET),
       pop()
     ),
@@ -217,4 +234,4 @@ function exprLoopTemplate(tokenOperator, astNodeType, subExpr) {
   return block(nt(tokenOperator), push(astNode(astNodeType, pop(), subExpr)))
 }
 
-module.exports = comparison
+module.exports = notTest
