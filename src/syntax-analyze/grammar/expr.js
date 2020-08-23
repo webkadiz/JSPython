@@ -174,8 +174,8 @@ function assignmentStmt(assignNode = astNode(astNodeTypes.ASSIGN_STMT)) {
   )
 }
 
-function simpleExpr() {
+function simpleStmt() {
   return assignmentStmt() || exprStmt()
 }
 
-module.exports = simpleExpr
+module.exports = simpleStmt
