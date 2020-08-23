@@ -15,6 +15,8 @@ function state(func, tokenizer) {
   }
 
   nt.state = state
+  getTokenizerState.state = state
+  secureTokenizer.state = state
 
   return [func(state), state]
 }
@@ -82,6 +84,15 @@ function unaryExprGen(funcName, subExpr, operators) {
   return unaryExpr
 }
 
+function getTokenizerState() {
+  return getTokenizerState.state.tokenizer.getState()
+}
+
+function secureTokenizer(tokenizerState, grammar) {
+  if (grammar === false) secureTokenizer.state.tokenizer.setState(tokenizerState)
+  return grammar
+}
+
 module.exports = {
   main,
   state,
@@ -89,4 +100,6 @@ module.exports = {
   nt,
   binExprGen,
   unaryExprGen,
+  getTokenizerState,
+  secureTokenizer
 }

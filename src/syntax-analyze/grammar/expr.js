@@ -2,7 +2,14 @@
 
 const astNodeTypes = require("../../ast/ast-node-types")
 const tokenTypes = require("../../token-analyze/token-types")
-const { astNode, nt, binExprGen, unaryExprGen } = require("../blocks")
+const {
+  astNode,
+  nt,
+  binExprGen,
+  unaryExprGen,
+  getTokenizerState,
+  secureTokenizer,
+} = require("../blocks")
 const identifier = require("./identifier")
 
 const literal = () => {
@@ -15,7 +22,6 @@ const literal = () => {
 }
 
 const atom = () => {
-  const identifier = require("./identifier")
   let tmp
 
   return (
@@ -145,8 +151,7 @@ function target() {
   return identifier()
 }
 
-function targetList(tlNode) {
-  tlNode = tlNode || astNode(astNodeTypes.TARGET_LIST)
+function targetList(tlNode = astNode(astNodeTypes.TARGET_LIST)) {
   let target_
 
   return (
@@ -156,16 +161,16 @@ function targetList(tlNode) {
   )
 }
 
-function assignmentStmt(assignNode) {
-  assignNode = assignNode || astNode(astNodeTypes.ASSIGN_STMT)
+function assignmentStmt(assignNode = astNode(astNodeTypes.ASSIGN_STMT)) {
   let tList, eStmt
 
-  return (
+  return secureTokenizer(
+    getTokenizerState(),
     (tList = targetList()) &&
-    nt(tokenTypes.EQUALS) &&
-    assignNode.addChild(tList) &&
-    (assignmentStmt(assignNode) ||
-      ((eStmt = exprStmt()) && assignNode.addChild(eStmt)))
+      nt(tokenTypes.EQUALS) &&
+      assignNode.addChild(tList) &&
+      (assignmentStmt(assignNode) ||
+        ((eStmt = exprStmt()) && assignNode.addChild(eStmt)))
   )
 }
 
