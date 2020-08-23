@@ -16,7 +16,7 @@ module.exports = class SyntaxAnalyzer {
       tokenizer: this.tokenizer,
     }
 
-    const [programmNode, state] = main(expr(), this.tokenizer)
+    const [programmNode, state] = main(expr, this.tokenizer)
 
     if (programmNode) return programmNode
 

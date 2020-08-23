@@ -53,6 +53,8 @@ module.exports = class Tokenizer {
       "tokenElse",
       "tokenOr",
       "tokenAnd",
+      "tokenNotIn",
+      "tokenIsNot",
       "tokenNot",
       "tokenIn",
       "tokenIs",
@@ -309,9 +311,18 @@ module.exports = class Tokenizer {
     return [tokenTypes.IS, slicedCode.match(/\bis\b/)]
   }
 
+  tokenIsNot(slicedCode) {
+    return [tokenTypes.IS_NOT, slicedCode.match(/\bis\b[ \t]+\bnot\b/)]
+  }
+
   tokenIn(slicedCode) {
     return [tokenTypes.IN, slicedCode.match(/\bin\b/)]
   }
+
+  tokenNotIn(slicedCode) {
+    return [tokenTypes.NOT_IN, slicedCode.match(/\bnot\b[ \t]+\bin\b/)]
+  }
+
   tokenDoubleEquals(slicedCode) {
     return [tokenTypes.D_EQUALS, slicedCode.match(/[=][=]/)]
   }

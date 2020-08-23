@@ -2,236 +2,133 @@
 
 const astNodeTypes = require("../ast/ast-node-types")
 const tokenTypes = require("../token-analyze/token-types")
-const {
-  db,
-  push,
-  pop,
-  loop,
-  alts,
-  block,
-  blockStateSave,
-  astNode,
-  nt,
-} = require("./blocks")
+const { astNode, nt, binExprGen, unaryExprGen } = require("./blocks")
 
-global.call = call
-global.power = power
-global.primary = primary
+const literal = (state) => {
+  let tmp
 
-function notTest() {
-  debugger
-  return alts(
-    block(nt(tokenTypes.NOT), astNode(astNodeTypes.BOOL_NOT, db(notTest))),
-    comparison()
+  return (
+    ((tmp = nt(state, tokenTypes.INT)) && astNode(astNodeTypes.INT, tmp)) ||
+    ((tmp = nt(state, tokenTypes.FLOAT)) && astNode(astNodeTypes.FLOAT, tmp))
   )
 }
 
-function comparison() {
-  return alts(
-    block(
-      push(orExpr()),
-      loop(
-        alts(
-          exprLoopTemplate(tokenTypes.LESS, astNodeTypes.COMP_LESS, orExpr()),
-          exprLoopTemplate(tokenTypes.MORE, astNodeTypes.COMP_MORE, orExpr()),
-          exprLoopTemplate(
-            tokenTypes.D_EQUALS,
-            astNodeTypes.COMP_EQUALS,
-            orExpr()
-          ),
-          exprLoopTemplate(
-            tokenTypes.LESS_EQUALS,
-            astNodeTypes.COMP_LESS_EQUALS,
-            orExpr()
-          ),
-          exprLoopTemplate(
-            tokenTypes.MORE_EQUALS,
-            astNodeTypes.COMP_MORE_EQUALS,
-            orExpr()
-          ),
-          exprLoopTemplate(
-            tokenTypes.NOT_EQUALS,
-            astNodeTypes.COMP_NOT_EQUALS,
-            orExpr()
-          ),
-          block(
-            nt(tokenTypes.NOT),
-            exprLoopTemplate(tokenTypes.IN, astNodeTypes.COMP_NOT_IN, orExpr())
-          ),
-          exprLoopTemplate(tokenTypes.IN, astNodeTypes.COMP_IN, orExpr()),
-          block(
-            nt(tokenTypes.IS),
-            exprLoopTemplate(tokenTypes.NOT, astNodeTypes.COMP_IS_NOT, orExpr())
-          ),
-          exprLoopTemplate(tokenTypes.IS, astNodeTypes.COMP_IS, orExpr())
-        )
-      ),
-      pop()
-    ),
-    pop()
+const atom = (state) => {
+  const identifier = require("./identifier")
+  let tmp
+
+  return (
+    identifier(state) ||
+    literal(state) ||
+    (nt(state, tokenTypes.OR_BRACKET) &&
+      (tmp = orTest(state)) &&
+      nt(state, tokenTypes.CR_BRACKET) &&
+      tmp)
   )
 }
 
-function orExpr() {
-  return alts(
-    block(
-      push(xorExpr()),
-      loop(
-        alts(exprLoopTemplate(tokenTypes.PIPE, astNodeTypes.BIN_OR, xorExpr()))
-      ),
-      pop()
-    ),
-    pop()
+const call = (state, atom) => {
+  const argList = require("./arg-list")
+  let tmp, args
+
+  return (
+    atom &&
+    nt(state, tokenTypes.OR_BRACKET) &&
+    ((args = argList(state)) || true) &&
+    nt(state, tokenTypes.CR_BRACKET) &&
+    (tmp = astNode(astNodeTypes.CALL, atom, args)) &&
+    (call(state, tmp) || tmp)
   )
 }
 
-function xorExpr() {
-  return alts(
-    block(
-      push(andExpr()),
-      loop(
-        alts(
-          exprLoopTemplate(tokenTypes.CARET, astNodeTypes.BIN_XOR, andExpr())
-        )
-      ),
-      pop()
-    ),
-    pop()
+const primary = (state) => {
+  const atom_ = atom(state)
+
+  return call(state, atom_) || atom_
+}
+
+const power = (state) => {
+  let tmp, tmp2
+
+  return (
+    (tmp = primary(state)) &&
+    ((nt(state, tokenTypes.D_STAR) &&
+      (tmp2 = uExpr(state)) &&
+      astNode(astNodeTypes.POWER, tmp, tmp2)) ||
+      tmp)
   )
 }
 
-function andExpr() {
-  return alts(
-    block(
-      push(shiftExpr()),
-      loop(
-        alts(
-          exprLoopTemplate(
-            tokenTypes.AMPERSAND,
-            astNodeTypes.BIN_AND,
-            shiftExpr()
-          )
-        )
-      ),
-      pop()
-    ),
-    pop()
+const uExpr = unaryExprGen("uExpr", power, [
+  [tokenTypes.PLUS, astNodeTypes.U_ADD],
+  [tokenTypes.MINUS, astNodeTypes.U_SUB],
+])
+
+const mExpr = binExprGen("mExpr", uExpr, [
+  [tokenTypes.STAR, astNodeTypes.MUL],
+  [tokenTypes.SLASH, astNodeTypes.DIV],
+  [tokenTypes.D_SLASH, astNodeTypes.DIVINT],
+  [tokenTypes.PERCENT, astNodeTypes.REMAINDER],
+])
+
+const aExpr = binExprGen("aExpr", mExpr, [
+  [tokenTypes.PLUS, astNodeTypes.ADD],
+  [tokenTypes.MINUS, astNodeTypes.SUB],
+])
+
+const shiftExpr = binExprGen("shiftExpr", aExpr, [
+  [tokenTypes.D_LESS, astNodeTypes.SHL],
+  [tokenTypes.D_MORE, astNodeTypes.SHR],
+])
+
+const andExpr = binExprGen("andExpr", shiftExpr, [
+  [tokenTypes.AMPERSAND, astNodeTypes.BIN_AND],
+])
+
+const xorExpr = binExprGen("xorExpr", andExpr, [
+  [tokenTypes.CARET, astNodeTypes.BIN_XOR],
+])
+
+const orExpr = binExprGen("orExpr", xorExpr, [
+  [tokenTypes.PIPE, astNodeTypes.BIN_OR],
+])
+
+const comparison = binExprGen("comparison", orExpr, [
+  [tokenTypes.LESS, astNodeTypes.COMP_LESS],
+  [tokenTypes.MORE, astNodeTypes.COMP_MORE],
+  [tokenTypes.D_LESS, astNodeTypes.COMP_LESS_EQUALS],
+  [tokenTypes.D_MORE, astNodeTypes.COMP_MORE_EQUALS],
+  [tokenTypes.D_EQUALS, astNodeTypes.COMP_EQUALS],
+  [tokenTypes.NOT_EQUALS, astNodeTypes.COMP_NOT_EQUALS],
+  [tokenTypes.IS_NOT, astNodeTypes.COMP_IS_NOT],
+  [tokenTypes.NOT_IN, astNodeTypes.COMP_NOT_IN],
+  [tokenTypes.IS, astNodeTypes.COMP_IS],
+  [tokenTypes.IN, astNodeTypes.COMP_IN],
+])
+
+const notTest = unaryExprGen("notTest", comparison, [
+  [tokenTypes.NOT, astNodeTypes.BOOL_NOT],
+])
+
+const andTest = binExprGen("andTest", notTest, [
+  [tokenTypes.AND, astNodeTypes.BOOL_AND],
+])
+
+const orTest = binExprGen("orTest", andTest, [
+  [tokenTypes.OR, astNodeTypes.BOOL_OR],
+])
+
+const condExpr = (state) => {
+  let orTestVar, orTestIf, expr
+
+  return (
+    ((orTestVar = orTest(state)) &&
+      nt(state, tokenTypes.IF) &&
+      (orTestIf = orTest(state)) &&
+      nt(state, tokenTypes.ELSE) &&
+      (expr = condExpr(state)) && astNode(astNodeTypes.COND_EXPR, orTestVar, orTestIf, expr)) ||
+    orTestVar
   )
 }
 
-function shiftExpr() {
-  return alts(
-    block(
-      push(aExpr()),
-      loop(
-        alts(
-          exprLoopTemplate(tokenTypes.D_LESS, astNodeTypes.SHL, aExpr()),
-          exprLoopTemplate(tokenTypes.D_MORE, astNodeTypes.SHR, aExpr())
-        )
-      ),
-      pop()
-    ),
-    pop()
-  )
-}
-
-function aExpr() {
-  return alts(
-    block(
-      push(mExpr()),
-      loop(
-        alts(
-          exprLoopTemplate(tokenTypes.PLUS, astNodeTypes.ADD, mExpr()),
-          exprLoopTemplate(tokenTypes.MINUS, astNodeTypes.SUB, mExpr())
-        )
-      ),
-      pop()
-    ),
-    pop()
-  )
-}
-
-function mExpr() {
-  return alts(
-    block(
-      push(uExpr()),
-      loop(
-        alts(
-          exprLoopTemplate(tokenTypes.STAR, astNodeTypes.MUL, uExpr()),
-          exprLoopTemplate(tokenTypes.SLASH, astNodeTypes.DIV, uExpr()),
-          exprLoopTemplate(tokenTypes.D_SLASH, astNodeTypes.DIVINT, uExpr()),
-          exprLoopTemplate(tokenTypes.PERCENT, astNodeTypes.REMAINDER, uExpr())
-        )
-      ),
-      pop()
-    ),
-    pop()
-  )
-}
-
-function uExpr() {
-  debugger
-  return alts(
-    block(nt(tokenTypes.PLUS), astNode(astNodeTypes.U_ADD, db(uExpr))),
-    block(nt(tokenTypes.MINUS), astNode(astNodeTypes.U_SUB, db(uExpr))),
-    power()
-  )
-}
-
-function power() {
-  debugger
-  return alts(
-    block(
-      push(primary()),
-      nt(tokenTypes.D_STAR),
-      astNode(astNodeTypes.POWER, pop(), db(uExpr))
-    ),
-    pop()
-  )
-}
-
-function primary() {
-  debugger
-  return alts(call(), atom())
-}
-
-function call() {
-  debugger
-  return blockStateSave(
-    push(atom()),
-    nt(tokenTypes.OR_BRACKET),
-    nt(tokenTypes.CR_BRACKET),
-    astNode(astNodeTypes.CALL, pop())
-  )
-}
-
-function atom() {
-  debugger
-  return alts(
-    identifier(),
-    block(
-      nt(tokenTypes.OR_BRACKET),
-      push(db(notTest)),
-      nt(tokenTypes.CR_BRACKET),
-      pop()
-    ),
-    literal()
-  )
-}
-
-function literal() {
-  return alts(
-    block(astNode(astNodeTypes.INT, nt(tokenTypes.INT))),
-    block(astNode(astNodeTypes.FLOAT, nt(tokenTypes.FLOAT)))
-  )
-}
-
-function identifier() {
-  return block(astNode(astNodeTypes.IDENT, nt(tokenTypes.IDENT)))
-}
-
-function exprLoopTemplate(tokenOperator, astNodeType, subExpr) {
-  return block(nt(tokenOperator), push(astNode(astNodeType, pop(), subExpr)))
-}
-
-module.exports = notTest
+module.exports = condExpr

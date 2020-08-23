@@ -19,6 +19,7 @@ module.exports = class AstNode {
     }
     
     this.childs.push(astNode)
+    return this
   }
 
   getChild(idx) {
