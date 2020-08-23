@@ -18,7 +18,7 @@ function state(func, tokenizer) {
   getTokenizerState.state = state
   secureTokenizer.state = state
 
-  return [func(state), state]
+  return [func(), state]
 }
 
 function astNode(nodeType, ...childs) {

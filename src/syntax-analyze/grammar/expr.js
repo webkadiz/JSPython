@@ -178,4 +178,13 @@ function simpleStmt() {
   return assignmentStmt() || exprStmt()
 }
 
-module.exports = simpleStmt
+function stmtList(stmtListNode = astNode(astNodeTypes.STMT_LIST)) {
+  let simpleStmt_
+  
+  return (simpleStmt_ = simpleStmt()) && stmtListNode.addChild(simpleStmt_) && (
+    nt(tokenTypes.SEMICOLON) && stmtList(stmtListNode) || stmtListNode
+  )
+
+}
+
+module.exports = stmtList
