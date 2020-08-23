@@ -3,6 +3,7 @@
 const astNodeTypes = require("../../ast/ast-node-types")
 const tokenTypes = require("../../token-analyze/token-types")
 const { astNode, nt, binExprGen, unaryExprGen } = require("../blocks")
+const identifier = require("./identifier")
 
 const literal = () => {
   let tmp
@@ -126,9 +127,50 @@ const condExpr = () => {
       nt(tokenTypes.IF) &&
       (orTestIf = orTest()) &&
       nt(tokenTypes.ELSE) &&
-      (expr = condExpr()) && astNode(astNodeTypes.COND_EXPR, orTestVar, orTestIf, expr)) ||
+      (expr = condExpr()) &&
+      astNode(astNodeTypes.COND_EXPR, orTestVar, orTestIf, expr)) ||
     orTestVar
   )
 }
 
-module.exports = condExpr
+function expr() {
+  return condExpr()
+}
+
+function exprStmt() {
+  return expr()
+}
+
+function target() {
+  return identifier()
+}
+
+function targetList(tlNode) {
+  tlNode = tlNode || astNode(astNodeTypes.TARGET_LIST)
+  let target_
+
+  return (
+    (target_ = target()) &&
+    tlNode.addChild(target_) &&
+    ((nt(tokenTypes.COMMA) && targetList(tlNode)) || tlNode)
+  )
+}
+
+function assignmentStmt(assignNode) {
+  assignNode = assignNode || astNode(astNodeTypes.ASSIGN_STMT)
+  let tList, eStmt
+
+  return (
+    (tList = targetList()) &&
+    nt(tokenTypes.EQUALS) &&
+    assignNode.addChild(tList) &&
+    (assignmentStmt(assignNode) ||
+      ((eStmt = exprStmt()) && assignNode.addChild(eStmt)))
+  )
+}
+
+function simpleExpr() {
+  return assignmentStmt() || exprStmt()
+}
+
+module.exports = simpleExpr
