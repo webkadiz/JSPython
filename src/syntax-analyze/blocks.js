@@ -14,6 +14,8 @@ function state(func, tokenizer) {
     tokenizer: tokenizer,
   }
 
+  nt.state = state
+
   return [func(state), state]
 }
 
@@ -22,32 +24,32 @@ function astNode(nodeType, ...childs) {
   return new AstNode(nodeType, ...trueChilds)
 }
 
-function nt(state, ...tokenTypes) {
-  const token = state.tokenizer.matchNextToken(...tokenTypes)
+function nt(tokenType) {
+  const token = nt.state.tokenizer.matchNextToken(tokenType)
 
   if (token instanceof Error) {
-    if (state.tokenizer.cursorIndex > state.cursorMax) {
-      state.cursorMax = state.tokenizer.cursorIndex
-      state.error = token
+    if (nt.state.tokenizer.cursorIndex > nt.state.cursorMax) {
+      nt.state.cursorMax = nt.state.tokenizer.cursorIndex
+      nt.state.error = token
     }
     return false
   } else return token
 }
 
 function binExprGen(funcName, subExpr, operators) {
-  function binExpr(state, leftExpr) {
+  function binExpr(leftExpr) {
     let node, rightExpr
-    leftExpr = leftExpr || subExpr(state)
+    leftExpr = leftExpr || subExpr()
 
     return (
       (leftExpr &&
         operators.reduce(
           (prev, [operType, nodeType]) =>
             prev ||
-            (nt(state, operType) &&
-              (rightExpr = subExpr(state)) &&
+            (nt(operType) &&
+              (rightExpr = subExpr()) &&
               (node = astNode(nodeType, leftExpr, rightExpr)) &&
-              binExpr(state, node)),
+              binExpr(node)),
           false
         )) ||
       leftExpr
@@ -60,18 +62,18 @@ function binExprGen(funcName, subExpr, operators) {
 }
 
 function unaryExprGen(funcName, subExpr, operators) {
-  function unaryExpr(state) {
+  function unaryExpr() {
     let rightExpr
 
     return (
       operators.reduce((prev, [operType, nodeType]) => {
         return (
           prev ||
-          (nt(state, operType) &&
-            (rightExpr = unaryExpr(state)) &&
+          (nt(operType) &&
+            (rightExpr = unaryExpr()) &&
             astNode(nodeType, rightExpr))
         )
-      }, false) || subExpr(state)
+      }, false) || subExpr()
     )
   }
 

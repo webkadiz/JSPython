@@ -4,56 +4,56 @@ const astNodeTypes = require("../../ast/ast-node-types")
 const tokenTypes = require("../../token-analyze/token-types")
 const { astNode, nt, binExprGen, unaryExprGen } = require("../blocks")
 
-const literal = (state) => {
+const literal = () => {
   let tmp
 
   return (
-    ((tmp = nt(state, tokenTypes.INT)) && astNode(astNodeTypes.INT, tmp)) ||
-    ((tmp = nt(state, tokenTypes.FLOAT)) && astNode(astNodeTypes.FLOAT, tmp))
+    ((tmp = nt(tokenTypes.INT)) && astNode(astNodeTypes.INT, tmp)) ||
+    ((tmp = nt(tokenTypes.FLOAT)) && astNode(astNodeTypes.FLOAT, tmp))
   )
 }
 
-const atom = (state) => {
+const atom = () => {
   const identifier = require("./identifier")
   let tmp
 
   return (
-    identifier(state) ||
-    literal(state) ||
-    (nt(state, tokenTypes.OR_BRACKET) &&
-      (tmp = orTest(state)) &&
-      nt(state, tokenTypes.CR_BRACKET) &&
+    identifier() ||
+    literal() ||
+    (nt(tokenTypes.OR_BRACKET) &&
+      (tmp = orTest()) &&
+      nt(tokenTypes.CR_BRACKET) &&
       tmp)
   )
 }
 
-const call = (state, atom) => {
+const call = (atom) => {
   const argList = require("./arg-list")
   let tmp, args
 
   return (
     atom &&
-    nt(state, tokenTypes.OR_BRACKET) &&
-    ((args = argList(state)) || true) &&
-    nt(state, tokenTypes.CR_BRACKET) &&
+    nt(tokenTypes.OR_BRACKET) &&
+    ((args = argList()) || true) &&
+    nt(tokenTypes.CR_BRACKET) &&
     (tmp = astNode(astNodeTypes.CALL, atom, args)) &&
-    (call(state, tmp) || tmp)
+    (call(tmp) || tmp)
   )
 }
 
-const primary = (state) => {
-  const atom_ = atom(state)
+const primary = () => {
+  const atom_ = atom()
 
-  return call(state, atom_) || atom_
+  return call(atom_) || atom_
 }
 
-const power = (state) => {
+const power = () => {
   let tmp, tmp2
 
   return (
-    (tmp = primary(state)) &&
-    ((nt(state, tokenTypes.D_STAR) &&
-      (tmp2 = uExpr(state)) &&
+    (tmp = primary()) &&
+    ((nt(tokenTypes.D_STAR) &&
+      (tmp2 = uExpr()) &&
       astNode(astNodeTypes.POWER, tmp, tmp2)) ||
       tmp)
   )
@@ -118,15 +118,15 @@ const orTest = binExprGen("orTest", andTest, [
   [tokenTypes.OR, astNodeTypes.BOOL_OR],
 ])
 
-const condExpr = (state) => {
+const condExpr = () => {
   let orTestVar, orTestIf, expr
 
   return (
-    ((orTestVar = orTest(state)) &&
-      nt(state, tokenTypes.IF) &&
-      (orTestIf = orTest(state)) &&
-      nt(state, tokenTypes.ELSE) &&
-      (expr = condExpr(state)) && astNode(astNodeTypes.COND_EXPR, orTestVar, orTestIf, expr)) ||
+    ((orTestVar = orTest()) &&
+      nt(tokenTypes.IF) &&
+      (orTestIf = orTest()) &&
+      nt(tokenTypes.ELSE) &&
+      (expr = condExpr()) && astNode(astNodeTypes.COND_EXPR, orTestVar, orTestIf, expr)) ||
     orTestVar
   )
 }
