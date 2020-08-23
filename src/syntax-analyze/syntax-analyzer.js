@@ -1,7 +1,7 @@
 "use strict"
 
 const main = require("./blocks").main
-const expr = require("./expr")
+const expr = require("./grammar/expr")
 
 module.exports = class SyntaxAnalyzer {
   constructor(tokenizer) {
