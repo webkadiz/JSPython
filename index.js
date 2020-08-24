@@ -32,5 +32,5 @@ function interpret(code, fileName) {
 
   programNode.print()
 
-  new Executor(programNode).exec()
+  console.log(new Executor(programNode).exec())
 }

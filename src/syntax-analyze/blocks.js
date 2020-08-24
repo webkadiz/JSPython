@@ -48,10 +48,13 @@ function binExprGen(funcName, subExpr, operators) {
         operators.reduce(
           (prev, [operType, nodeType]) =>
             prev ||
-            (nt(operType) &&
-              (rightExpr = subExpr()) &&
-              (node = astNode(nodeType, leftExpr, rightExpr)) &&
-              binExpr(node)),
+            secureTokenizer(
+              getTokenizerState(),
+              nt(operType) &&
+                (rightExpr = subExpr()) &&
+                (node = astNode(nodeType, leftExpr, rightExpr)) &&
+                binExpr(node)
+            ),
           false
         )) ||
       leftExpr
@@ -89,7 +92,8 @@ function getTokenizerState() {
 }
 
 function secureTokenizer(tokenizerState, grammar) {
-  if (grammar === false) secureTokenizer.state.tokenizer.setState(tokenizerState)
+  if (grammar === false)
+    secureTokenizer.state.tokenizer.setState(tokenizerState)
   return grammar
 }
 
@@ -101,5 +105,5 @@ module.exports = {
   binExprGen,
   unaryExprGen,
   getTokenizerState,
-  secureTokenizer
+  secureTokenizer,
 }
