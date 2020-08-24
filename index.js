@@ -4,7 +4,7 @@
 const fs = require("fs")
 const SyntaxAnalyzer = require("./src/syntax-analyze/syntax-analyzer")
 const Tokenizer = require("./src/token-analyze/tokenizer")
-const Executor = require("./src/executor")
+const Executor = require("./src/execution/executor")
 
 let srcFilePath = process.argv[2]
 
@@ -28,9 +28,9 @@ function interpret(code, fileName) {
     new Tokenizer(code, fileName).prepare()
   )
 
-  console.time()
-  const programmNode = syntaxAnalyzer.parse()
-  console.timeEnd()
+  const programNode = syntaxAnalyzer.parse()
 
-  programmNode.print()
+  programNode.print()
+
+  new Executor(programNode).exec()
 }
