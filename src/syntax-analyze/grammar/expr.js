@@ -180,11 +180,32 @@ function simpleStmt() {
 
 function stmtList(stmtListNode = astNode(astNodeTypes.STMT_LIST)) {
   let simpleStmt_
-  
-  return (simpleStmt_ = simpleStmt()) && stmtListNode.addChild(simpleStmt_) && (
-    nt(tokenTypes.SEMICOLON) && stmtList(stmtListNode) || stmtListNode
-  )
 
+  return (
+    (simpleStmt_ = simpleStmt()) &&
+    stmtListNode.addChild(simpleStmt_) &&
+    ((nt(tokenTypes.SEMICOLON) && stmtList(stmtListNode)) || stmtListNode)
+  )
 }
 
-module.exports = stmtList
+function compoundStmt() {
+  return false
+}
+
+function statement() {
+  let tmp
+
+  return ((tmp = stmtList()) && nt(tokenTypes.NEWLINE) && tmp) || compoundStmt()
+}
+
+function fileInput(fileInputNode = astNode(astNodeTypes.FILE_INPUT)) {
+  let tmp, nl
+
+  return (
+    ((nl = nt(tokenTypes.NEWLINE)) ||
+      ((tmp = statement()) && fileInputNode.addChild(tmp))) &&
+    ((nl != "end" && fileInput(fileInputNode)) || fileInputNode)
+  )
+}
+
+module.exports = fileInput

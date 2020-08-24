@@ -13,6 +13,7 @@ module.exports = class SyntaxAnalyzer {
 
     if (programmNode) return programmNode
 
+    console.log(state)
     console.log(programmNode)
     throw state.error
   }

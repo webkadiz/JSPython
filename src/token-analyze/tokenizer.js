@@ -37,7 +37,10 @@ module.exports = class Tokenizer {
     }
 
     for (const tokenTypeParam of tokenTypesParam) {
-      if (tokenTypeParam === tokenType) return token
+      if (tokenTypeParam === tokenType) {
+        token = token === "" ? "end" : token // end of file
+        return token
+      }
     }
 
     this.setState(cursor)
@@ -87,7 +90,6 @@ module.exports = class Tokenizer {
       "tokenPipe",
       "tokenCaret",
       "tokenAmpersand",
-      "tokenEnd",
     ]
 
     for (const matchFuncName of matchFuncNames) {
@@ -244,7 +246,7 @@ module.exports = class Tokenizer {
   }
 
   tokenNewline(slicedCode) {
-    return [tokenTypes.NEWLINE, slicedCode.match(/\n/)]
+    return [tokenTypes.NEWLINE, slicedCode.match(/[\n]|^$/)]
   }
 
   tokenSemicolon(slicedCode) {
@@ -345,9 +347,5 @@ module.exports = class Tokenizer {
 
   tokenPercent(slicedCode) {
     return [tokenTypes.PERCENT, slicedCode.match(/%/)]
-  }
-
-  tokenEnd(sliceCode) {
-    return [tokenTypes.END, sliceCode.match(/^$/)]
   }
 }
